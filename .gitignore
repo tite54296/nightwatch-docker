@@ -1,0 +1,14 @@
+# IDEs
+/.idea
+/.vscode
+
+# Package Managers
+/node_modules
+npm-debug.log
+package-lock.json
+
+# OS
+*.DS_Store
+
+# Logs
+selenium-debug.log

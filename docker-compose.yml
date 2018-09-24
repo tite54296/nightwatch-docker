@@ -1,0 +1,74 @@
+version: '2'
+services:
+  hub:
+    image: selenium/hub:2.53.0
+  chrome:
+    image: selenium/node-chrome:2.53.0
+    depends_on:
+      - hub
+    environment:
+      # Fix for https://github.com/SeleniumHQ/docker-selenium/issues/133
+      - HUB_PORT_4444_TCP_ADDR=hub
+  firefox:
+    image: selenium/node-firefox:2.53.0
+    depends_on:
+      - hub
+    environment:
+      # Fix for https://github.com/SeleniumHQ/docker-selenium/issues/133
+      - HUB_PORT_4444_TCP_ADDR=hub
+  nightwatch:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint:
+      - wait-for
+      - hub:4444
+      - --
+      - nightwatch
+    command: "--e default,firefox"
+    depends_on:
+      - hub
+      - chrome
+      - firefox
+    volumes:
+      - ./test:/home/node
+  chromedebug:
+    image: selenium/node-chrome-debug
+    depends_on:
+      - hub
+    environment:
+      # Fix for https://github.com/SeleniumHQ/docker-selenium/issues/133
+      - HUB_PORT_4444_TCP_ADDR=hub
+      # Fix for https://github.com/SeleniumHQ/docker-selenium/issues/227
+      - HUB_ENV_no_proxy=localhost
+      - no_proxy=localhost
+    ports:
+      - 5900:5900
+  firefoxdebug:
+    image: selenium/node-firefox-debug
+    depends_on:
+      - hub
+    environment:
+      # Fix for https://github.com/SeleniumHQ/docker-selenium/issues/133
+      - HUB_PORT_4444_TCP_ADDR=hub
+      # Fix for https://github.com/SeleniumHQ/docker-selenium/issues/227
+      - HUB_ENV_no_proxy=localhost
+      - no_proxy=localhost
+    ports:
+      - 5901:5900
+  nightwatchvnc:
+    image: blueimp/nightwatch:0.9
+    entrypoint:
+      - wait-for
+      - hub:4444
+      - chromedebug:5900
+      - firefoxdebug:5900
+      - --
+      - nightwatch
+    command: "--e default"
+    depends_on:
+      - hub
+      - chromedebug
+      - firefoxdebug
+    volumes:
+      - ./test:/home/node
